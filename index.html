@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Maude interface</title>
+</head>
+<body>
+  <div>
+    <h1>Maude Interface/Online Compiler?</h1>
+  </div>
+  <div>
+    <p>Subtítulo aquí presentando la página</p>
+    <div>
+      <a target="_blank" class="item" href="https://github.com/fadoss/maude-bindings">Maude bindings</a>
+      <a target="_blank" class="item" href="http://rest.hets.eu/">Hets</a>
+      <a target="_blank" class="item" href="https://maude.cs.illinois.edu/w/index.php/The_Maude_System">The Maude System</a>
+      <a class="item" href="mailto:bcarranc@ucm.es">Contact</a>
+    </div>
+  </div>
+  <p>
+    (Breves instrucciones para utilizar la interfaz.)
+  </p>
+
+  <div>
+    <input type="text" readonly="true" placeholder="Browse">
+    <input type="file" id="file" name="file" autocomplete="off">
+    <div class="ui button">Choose File...</div>
+  </div>
+
+  <p>Or </p>
+
+  <form id="maudeForm" onsubmit="executeMaudeCommand(event)">
+    <div>
+      <label for="maude_command"></label>
+    </div>
+    <div>
+      <textarea cols="60" rows="18" name="maude_module" id="maude_module" style="font-family: monospace;" placeholder="Enter your maude module here"></textarea>
+    </div>
+    <div>
+      <input type="text" name="maude_command" id="maude_command" placeholder="Command">
+      <button type="submit">Submit</button>
+    </div>    
+    <div>
+      <h3>Module Examples:</h3>
+      <ul>
+        <li onclick="fillModule('NAT')">NAT</li>
+        <li onclick="fillModule('fmod FOO is pr NAT . op f : Nat Nat -> Nat . eq f(M:Nat, N:Nat) = M:Nat + N:Nat . endfm')">Ejemplo 1</li>
+        <li onclick="fillModule('fmod FOO is\n\tpr NAT .\n\n\top f : Nat Nat -> Nat .\n\teq f(M:Nat, N:Nat) = M:Nat + N:Nat .\nendfm')">Ejemplo 1 con saltos de linea</li>
+      </ul>
+    </div>
+  </form>
+
+  <div id="resultContainer"></div>
+
+  <script>
+    
+    function fillModule(example) {
+        document.getElementById("maude_module").value = example;
+    }
+
+    function executeMaudeCommand(event) {
+      event.preventDefault();
+
+      var maudeModule = document.getElementById("maude_module").value;
+      var maudeCommand = document.getElementById("maude_command").value;
+
+      runPythonScript(maudeModule, maudeCommand);
+    }
+
+    function runPythonScript(maudeModule, maudeCommand) {
+      maudeModule = maudeModule.replace(/\n/g, '\\n');
+      
+      var xhr = new XMLHttpRequest();
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+          document.getElementById("resultContainer").innerHTML = xhr.responseText;
+        }
+      };
+
+      xhr.open("POST", "run_script.php", true);
+      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      xhr.send("maude_module=" + encodeURIComponent(maudeModule) + "&maude_command=" + encodeURIComponent(maudeCommand));
+    }
+  </script>
+</body>
+</html>
