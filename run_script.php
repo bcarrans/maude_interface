@@ -1,9 +1,6 @@
 <?php
 chdir(__DIR__);
 
-//$maude_module = str_replace('\n', "\n", $_POST["maude_module"]);
-
-
 $maude_module = $_POST["maude_module"];
 $maude_command = $_POST["maude_command"];
 
