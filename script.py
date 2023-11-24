@@ -91,7 +91,8 @@ elif command == "erewrite" or command == "erew": #erewrite {[ bound {,number} ]}
     term, bound, gas = getSquareBrackets(params)
     print("Bound: ", bound, " Gas: ", gas)
     t = m.parseTerm(term)
-    t.erewrite(bound=bound, gas=gas)
+    ans, nrew = t.erewrite(bound=bound, gas=gas)
+    print(t,'->',ans,'in',nrew,'rewrites')
 
 
 elif command == "continue": #continue {number} .
@@ -165,7 +166,12 @@ elif command == "search": #search {[ bound {,depth} ]} {in module :} subject sea
     print("Condition: ", condition)
 
     t = m.parseTerm(subject)
-    t.search(type=searchtype, pattern=m.parseTerm(pattern), strategy=m.parseStrategy(bound), condition=condition, depth=depth)
+    t2 = m.parseTerm(subject)
+
+    for sol, subs, path, nrew in t.search(maude.ANY_STEPS, t2):
+	    print(sol, 'with', subs, 'by', path())
+    ##hay otro ejemplo mas    
+    #t.search(type=searchtype, pattern=m.parseTerm(pattern), strategy=m.parseStrategy(bound), condition=condition, depth=depth)
 
 
 
@@ -177,7 +183,11 @@ elif command == "srewrite" or command == "srew": #srewrite {[ bound ]} {in modul
     strategyexpr = params.split(' by ')[1].strip()
     print("Bound: ", bound, " Subject: ", subject, " Strategyexpr: ", strategyexpr)
     t = m.parseTerm(subject) 
-    t.srewrite(expr=strategyexpr,depth=bound)
+
+    for sol, nrew in t.srewrite(m.parseStrategy('swap *')): ## whatt
+	    print(sol, 'in', nrew, 'rewrites')
+
+    #t.srewrite(expr=strategyexpr,depth=bound)
 
 elif command == "dsrewrite" or command == "dsrew": #dsrewrite {[ bound ]} {in module :} subject by strategyexpr .
     t = "Ups"
