@@ -2,8 +2,6 @@
 
 import sys
 import maude
-import regex
-import re
 
 
 ### DEFINITIONS
@@ -29,23 +27,88 @@ def getSquareBrackets(params):
     a = None
     b = None
     if'[' in params:
-        params_2 = params.split(']')
+        paramsAux = params.split(']')
 
-        if(',' in params_2[0]):
-            params_3 = params_2[0].split(',')
-            a = params_3[0][1:].strip()
-            b = params_3[1].strip()
+        if(',' in paramsAux[0]):
+            paramsAux2 = paramsAux[0].split(',')
+            a = paramsAux2[0][1:].strip()
+            b = paramsAux2[1].strip()
             
         else:
-            a = params_2[0][1:]
+            a = paramsAux[0][1:]
 
-        params = params_2[1]
+        params = paramsAux[1]
         if a == '':
             a = None
 
     return params, a, b
 
 
+def getCondition(params):
+    if 's.t.' in params or 'such that' in params:
+
+        if 's.t.' in params:
+            paramsAux = params.split('s.t.')
+        elif 'such that' in params:
+            paramsAux = params.split('such that')
+
+        condStr = paramsAux[1].strip()
+        params = paramsAux[0]
+        condFrags = condStr.split(' /\ ')
+
+        try:
+            cond = maude.Condition(3)
+        except Exception as e:
+            print("Error al declarar la condicion: {e}")
+
+        #conditionFragments = []
+
+        for x in condFrags:
+            print("Fragmento: ", x)
+            if '=' in x:
+                condAux = x.split('=')
+                t1 = m.parseTerm(condAux[0].strip())
+                t2 = m.parseTerm(condAux[1].strip())
+                try:
+                    #condFragment = maude.EqualityCondition(t1, t2)
+                    print("aaa")
+                except Exception as e:
+                    print("Error en la equality condition: {e}")
+
+            elif ' : ' in x:
+                condAux = x.split(' : ')
+                t1 = m.parseTerm(condAux[0].strip())
+                t2 = m.parseTerm(condAux[1].strip())               
+                try:
+                    #condFragment = maude.SortTestCondition(t1, t2)
+                    print("la 2")
+                except Exception as e:
+                    print("Error en la sorttest condition: {e}")
+
+            elif ':=' in x:
+                condAux = x.split(':=')
+                t1 = m.parseTerm(condAux[0].strip())
+                t2 = m.parseTerm(condAux[1].strip())
+                try:
+                    condFragment = maude.AssignmentCondition(t1, t2)
+                except Exception as e:
+                    print("Error en la assigment condition: {e}")
+
+            elif '=>' in x:
+                condAux = x.split('=>')
+                t1 = m.parseTerm(condAux[0].strip())
+                t2 = m.parseTerm(condAux[1].strip())
+                try:
+                    condFragment = maude.RewriteCondition(t1, t2)
+                except Exception as e:
+                    print("Error en la rewrite condition: {e}")
+
+            cond.append(condFragment)
+            #conditionFragments.append(condFragment)
+        return params, cond
+
+    else:
+        return params, None
 
 
 
@@ -60,20 +123,27 @@ print("Module: " + maude_module)
 maude.input(maude_module)
 
 command, params = getCommand(maude_command)
-m, params = getCommandModule(params)
+m,  params = getCommandModule(params)
 
 p = params.split()
 
 print("Command: " + command)
 print("Parameters: " + params)
 
+#term, bound, gas, condition, number, pattern, subjectTerm, searchtype, depth = None
 
 
+#### quitar esto (condTest)
+if command == "condition":
+    print(' Getting condition...   ')
+    params, condition = getCondition(params)
+    print('Condition: Cant print condition')
 
 ### REWRITING
-if command == "reduce" or command == "red": #reduce {in module :} term .
+elif command == "reduce" or command == "red": #reduce {in module :} term .
     t = m.parseTerm(params)
     t.reduce()
+
 
 elif command == "rewrite" or command == "rew": #rewrite {[ bound ]} {in module :} term .
     term, bound, b = getSquareBrackets(params)
@@ -95,88 +165,71 @@ elif command == "erewrite" or command == "erew": #erewrite {[ bound {,number} ]}
     print(t,'->',ans,'in',nrew,'rewrites')
 
 
-elif command == "continue": #continue {number} .
-    #t.frewrite[number, ] del ultimo frewite que se hubiese ejecutado? eing
-    t = "Continue no está supporteado todavía"
-
-#loop {in module :} term .(deprecated)
-
-#( identifier* ) (deprecated)
-
-
 ### MATCHING
 elif command == "match": #match {[ number ]} {in module :} pattern <=? subject-term {such that condition} .
     params, number, b = getSquareBrackets(params)
+    params, condition = getCondition(params)
+    pattern = params.split('<=?')[0].strip()
+    subjectTerm = params.split('<=?')[1].strip()
+    print("Number: ", number, " Pattern: ", pattern, " Subject-Term: ", subjectTerm, " Condition: ", condition)
+    t = m.parseTerm(subjectTerm)
+    for match in t.match(pattern=pattern, condition=condition, withExtension=False, minDepth=None, maxDepth=-1):
+         print(match)
 
-    if 's.t.' in params:
-        params_2 = params.split('s.t.')
-        condition = params_2[1].strip()
-        params = params_2[0]
-
+    #t.match(pattern=pattern, condition=condition, withExtension=False, minDepth=None, maxDepth=None)
+#withExtension está obsoleto, utilizar maxDepth instead. En la extension dejo el bool o pongo None? en maxDepth de xmatch es 0, en el normal qué? None?
+    
+elif command == "xmatch": #xmatch {[ number ]} {in module :} pattern <=? subject-term {such that condition} .
+    #Misma que la anterior pero with extension(no, con maxDepth = 0
+    params, number, b = getSquareBrackets(params)
+    params, condition = getCondition(params)
     pattern = params.split('<=?')[0].strip()
     subject = params.split('<=?')[1].strip()
-
     print("Number: ", number, " Pattern: ", pattern, " Subject-Term: ", subject, " Condition: ", condition)
     t = m.parseTerm(subject)
-    t.match(pattern=pattern, condition=condition, withExtension=False,minDepth=None,maxDepth=None) #cual es cual??
+    for match in t.match(pattern=pattern, condition=condition, withExtension=True, minDepth=None, maxDepth=0):
+         print(match)
 
-elif command == "xmatch": #xmatch {[ number ]} {in module :} pattern <=? subject-term {such that condition} .
-    #Misma que la anterior pero with extension
-    params, a, b = getSquareBrackets(params)
-
-    if 's.t.' in params:
-        params_2 = params.split('s.t.')
-        condition = params_2[1].strip()
-        params = params_2[0]
-
-    pattern = params.split(' <=? ')[0].strip()
-    subject = params.split(' <=? ')[1].strip()
-
-    print("Number: ", a, " Pattern: ", pattern, " Subject-Term: ", subject, " Condition: ", condition)
-    t = m.parseTerm(subject)
-    t.match(pattern=pattern, condition=condition, withExtension=True,minDepth=None,maxDepth=None)
 
 
 ###SEARCHING
 elif command == "search": #search {[ bound {,depth} ]} {in module :} subject searchtype pattern {such that condition} .
-    bound = None
-    depth = None
-    subject = None
-    searchtype = None
-    pattern = None
-    condition = None
-
     params, bound, depth = getSquareBrackets(params)
+    params, condition = getCondition(params)
 
-    if 's.t.' in params:
+    '''if 's.t.' in params:
         params_2 = params.split('s.t.')
         condition = params_2[1].strip()
-        params = params_2[0]
+        params = params_2[0]'''
 
-    searchtype = params[params.index('=>'):params.index('=>') + 3]
-    subject = params.split(searchtype)[0].strip()
+    if "=>1" in params:
+        searchtype = maude.ONE_STEP
+    elif "=>+" in params:
+        searchtype = maude.AT_LEAST_ONE_STEP
+    elif "=>*" in params:
+        searchtype = maude.ANY_STEPS
+    elif "=>!" in params:
+        searchtype = maude.NORMAL_FORM
+
+    #searchtype = params[params.index('=>'):params.index('=>') + 3]
+    subjectTerm = params.split(searchtype)[0].strip()
     pattern = params.split(searchtype)[1].strip()
 
-    print("Bound: ", bound)
-    print("Depth: ", depth)
-    print("Module: ", m)
-    print("Subject: ", subject)
-    print("Searchtype: ", searchtype)
-    print("Pattern: ", pattern)   
-    print("Condition: ", condition)
+    print("Bound: ", bound, "Depth: ", depth, "Module: ", m, "Subject term: ", subjectTerm, "Searchtype: ", searchtype, "Pattern: ", pattern, "Condition: ", condition)
 
-    t = m.parseTerm(subject)
-    t2 = m.parseTerm(subject)
-
-    for sol, subs, path, nrew in t.search(maude.ANY_STEPS, t2):
-	    print(sol, 'with', subs, 'by', path())
-    ##hay otro ejemplo mas    
-    #t.search(type=searchtype, pattern=m.parseTerm(pattern), strategy=m.parseStrategy(bound), condition=condition, depth=depth)
+    t = m.parseTerm(pattern) #espera era al reves creo
+    t2 = m.parseTerm(subjectTerm)
 
 
+    for sol, subs, path, nrew in t.search(ype=searchtype, pattern=m.parseTerm(pattern), strategy=m.parseStrategy(bound), condition=condition, depth=depth):
+	    print(sol, 'with', subs, 'by', path(), '(solution, subs, path)')
+    
+
+    ## hay otro ejemplo mas    
+    # t.search(type=searchtype, pattern=m.parseTerm(pattern), strategy=m.parseStrategy(bound), condition=condition, depth=depth)
 
 
-### STRATEGIC REWRITING
+### STRATEGIC REWRITING (ignorar de momento, no están suporteadas las estrategias aun)
 elif command == "srewrite" or command == "srew": #srewrite {[ bound ]} {in module :} subject by strategyexpr .
     params, bound, b = getSquareBrackets(params)
     subject = params.split(' by ')[0].strip()
@@ -187,42 +240,10 @@ elif command == "srewrite" or command == "srew": #srewrite {[ bound ]} {in modul
     for sol, nrew in t.srewrite(m.parseStrategy('swap *')): ## whatt
 	    print(sol, 'in', nrew, 'rewrites')
 
-    #t.srewrite(expr=strategyexpr,depth=bound)
+    #t.srewrite(expr=strategyexpr,depth=bound) noooo depth es un booleano, es false para este y true para dstrewrite
 
 elif command == "dsrewrite" or command == "dsrew": #dsrewrite {[ bound ]} {in module :} subject by strategyexpr .
-    t = "Ups"
-
-
-### UNIFICATION, VARIANTS, AND NARROWING
-
-#{irredundant} unify {[ bound ]} {in module :} term1 =? term’1 { /∖ … /∖ termk =? term’k } .
-##########con este que hago como que irredumdant????
-
-#{filtered} variant unify {[ bound ]} {in module :} term1 =? term’1 { /∖ … /∖ termk =? term’k } {such that term”1, …, term”n irreducible}.
-##### y esto??? que es esto
-
-elif command == "variant": #variant match {[ bound ]} {in module :} term1 <=? term’1 { /∖ … /∖ termk <=? term’k } {such that term”1, …, term”n irreducible} .
-    t = m.parseTerm(params)
-    t.rewrite()
-
-elif command == "get": #get {irredundant} variants {[ bound ]} {in module :} term {such that term”1, …, term”n irreducible} .
-    t = m.parseTerm(params)
-    t.rewrite()
-
-#{{fold}} vu-narrow {{variantopts}} {[ bound {,depth} ]} {in module :} pattern1 searchtype pattern2 .
-####????????
-
-elif command == "fvu-narrow": #fvu-narrow {[ bound {,depth} ]} {in module :} pattern1 searchtype pattern2 .
-    params, bound, depth = getSquareBrackets(params)
-    pattern1, serachtype, pattern2 = None
-    #t.vu_narrow(type=None, target=None, depth=depth, fold=True, filter=None, delay=None)
-
-
-
-### SMT
-elif command == "check": #check {in module :} term .
-    t = m.parseTerm(params)
-    t.check()
+    t = "Es igual que srewrite pero con depth a true"
 
 
 
@@ -232,13 +253,6 @@ elif command == "parse": #parse {in module :} term .
 
 elif command == "select": #select module .
     t  = maude.getModule(params)
-
-elif command == "do": #do clear memo { module } .
-    if "clear" in params and "memo" in params:
-        params = ' '.join(p[2:]).strip()
-        if params == '': params = None
-        # vale pues no lo encuentro
-        # solo está maude.OP_MEMO en operatos attributes, algo de las rules, solo veo el apply que no sea getter, hay 5mil get rules ??
 
 else:
     t = "The provided command could not be recognized"

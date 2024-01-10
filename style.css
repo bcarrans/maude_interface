@@ -1,0 +1,73 @@
+body {
+    padding: 20px;
+    background-color: rgba(212, 212, 212, 0.322);
+
+  }
+
+  .headerstuff h1 {
+  }
+  .headerstuff p {
+    color: #5a5a5a;
+  }
+  .headerstuff a.item {
+    text-decoration: none;/*quitar subrayado*/
+    margin-right: 5px;
+  }
+  .headerstuff a.item:hover {
+    text-decoration: underline;
+  }
+
+  .fileInput{
+    margin-top: 50px;
+  }
+  
+  .container {
+    max-width: 800px;
+  }
+
+  .content-container {
+    display: inline-block;
+    vertical-align: top;
+    width: calc(70% - 20px);
+    margin-top: 45px;
+    box-sizing: border-box;
+
+  }
+  textarea {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+
+  .modList-container {
+    float: right;
+    width: 30%;
+    margin-top: 20px;
+    box-sizing: border-box;
+    padding: 10px;
+  }
+  
+  
+  button {
+    cursor: pointer;
+  }
+  
+  
+  li {
+    cursor: pointer;
+  }
+  
+  #resultContainer {
+    margin-top:40px;
+    max-width: 800px;
+    background-color: rgba(255, 255, 255, 0.678);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  #resultContainer p {
+  }
+
+
+
+  
