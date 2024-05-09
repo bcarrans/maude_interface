@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Carrancio"
+  given-names: "Casero"
+  orcid: "https://orcid.org/0000-0000-0000-0000"
+title: "maude_interface"
+version: 1.0.0
+doi: 10.5281/zenodo.1234
+date-released: 2024-05-09
+url: "https://github.com/bcarrans/maude_interface"
