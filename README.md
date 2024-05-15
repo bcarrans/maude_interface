@@ -16,6 +16,6 @@ The Maude commands this platform currently supports are the following:
   - `search`
 
 More information on the Maude system can be found in the following manual:
-- Clavel, M., Durán, F., Eker, S., Escobar, S., Lincoln, P., Martí-Oliet, N., Meseguer, J., Rubio, R., & Talcott, C. (2024). *The Maude System, Version 3.4*. University of Illinois at Urbana-Champaign. Available at [https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf](https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf).
+- Clavel, M., Durán, F., Eker, S., Escobar, S., Lincoln, P., Martí-Oliet, N., Meseguer, J., Rubio, R., & Talcott, C. (2024). *Maude Manual, Version 3.4*. University of Illinois at Urbana-Champaign. Available at [https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf](https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf).
 
   The syntax to be used is specified in the Appendix A which is available [here](https://maude.lcc.uma.es/maude-manual/maude-manualap1.html#x129-311000A) in HTML format.
