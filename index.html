@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 
+
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Maude interface</title>
+    <title>Maude Web Interface</title>
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
@@ -12,19 +13,21 @@
 
   <div class="headerstuff">
     <div>
-      <h1>Maude Interface/Online Compiler?</h1>
+      <h1>Maude Web Interface</h1>
     </div>
     <div>
-      <p>Subtítulo aquí presentando la página</p>
+      <p>An online gateway to The Maude Programming Languaje</p>
       <div>
-        <a target="_blank" class="item" href="https://github.com/fadoss/maude-bindings">Maude bindings</a>
-        <a target="_blank" class="item" href="http://rest.hets.eu/">Hets</a>
+        <a target="_blank" class="item" href="https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf">Maude Manual</a>
         <a target="_blank" class="item" href="https://maude.cs.illinois.edu/w/index.php/The_Maude_System">The Maude System</a>
         <a class="item" href="mailto:bcarranc@ucm.es">Contact</a>
       </div>
     </div>
+    <p style="margin-top: 50px;">
+      To begin using Maude, enter a module and a command following The Maude System syntax and click "Submit".
+    </p>
     <p>
-      (Breves instrucciones para utilizar la interfaz.)
+    You can also enter a module though an uploaded file (.txt, .maude) or use one of the sugested modules in the section "Module Examples".
     </p>
   </div>
 
@@ -33,15 +36,13 @@
     <input type="file" id="file" name="file" autocomplete="off" accept=".txt, .maude" onchange="fileSelected()">
   </div>
 
-  <!--<p>Or </p>-->
-
   <div class="container">
     <form id="maudeForm" onsubmit="executeMaudeCommand(event)">
 
       <div class="content-container">
         <label for="maude_command"></label>
         <textarea cols="60" rows="18" name="maude_module" id="maude_module" style="font-family: monospace;" placeholder="Enter your maude module here"></textarea>
-        <input type="text"  name="maude_command" id="maude_command" style="font-family: monospace; width: 250px;" placeholder="Command">
+        <input type="text" name="maude_command" id="maude_command" style="font-family: monospace; width: 250px; margin-top: 20px;" placeholder="Command">
         <button type="submit">Submit</button>
       </div>
 
@@ -61,6 +62,16 @@
   </div>
 
   <div id="resultContainer"></div>
+
+  <div class="footerstuff">
+  <p> 
+    Please be reminded that not all Maude commands are currently supported in this platform. 
+  </p>
+  <p>
+    You can review the allowed syntax 
+    <a href="https://github.com/bcarrans/maude_interface/blob/main/README.md">here</a>.
+  </p>
+  </div>
 
   <script>
     
@@ -89,18 +100,18 @@
 
       var maudeModule = document.getElementById("maude_module").value;
       var maudeCommand = document.getElementById("maude_command").value;
-
+      document.querySelector('button[type="submit"]').disabled = true;
       runPythonScript(maudeModule, maudeCommand);
     }
 
     function runPythonScript(maudeModule, maudeCommand) {
-      //maudeModule = maudeModule.replace(/\n/g, '\\n');
       
       var xhr = new XMLHttpRequest();
 
       xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
           document.getElementById("resultContainer").innerHTML = xhr.responseText;
+          document.querySelector('button[type="submit"]').disabled = false;
         }
       };
 
@@ -108,6 +119,8 @@
       xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
       xhr.send("maude_module=" + encodeURIComponent(maudeModule) + "&maude_command=" + encodeURIComponent(maudeCommand));
     }
+
   </script>
+  
 </body>
 </html>
