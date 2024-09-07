@@ -115,11 +115,18 @@ class Aplicacion
 	{
 	    $this->compruebaInstanciaInicializada();
 		if (! $this->conn ) {
-			$bdHost = $this->bdDatosConexion['host'];
-			$bdUser = $this->bdDatosConexion['user'];
-			$bdPass = $this->bdDatosConexion['pass'];
-			$bd = $this->bdDatosConexion['bd'];
+			//$bdHost = $this->bdDatosConexion['host'];
+			//$bdUser = $this->bdDatosConexion['user'];
+			//$bdPass = $this->bdDatosConexion['pass'];
+			//$bd = $this->bdDatosConexion['bd'];
 			
+			//$this->conn = new \mysqli($bdHost, $bdUser, $bdPass, $bd);
+
+			$bdHost = getenv('MYSQL_HOST') ?: 'db';//'localhost';
+			$bdUser = getenv('MYSQL_USER') ?: 'root';
+			$bdPass = getenv('MYSQL_PASSWORD') ?: '';
+			$bd = getenv('MYSQL_DATABASE') ?: 'my_database';
+
 			$this->conn = new \mysqli($bdHost, $bdUser, $bdPass, $bd);
 			if ( $this->conn->connect_errno ) {
 				echo "Error de conexión a la BD: (" . $this->conn->connect_errno . ") " . utf8_encode($this->conn->connect_error);

@@ -35,27 +35,35 @@ class Input {
         }
         return $result;
     }   
-       
-    public static function execute() {      
-        #$maude_module = base64_encode($_SESSION['module']); # ESTO DE MOMENTO TAMPOCO
+           
+    public static function execute() {
         $maude_module = base64_encode($_POST["maude_module"]);
         $maude_command = base64_encode($_POST["maude_command"]);
-      
+        
         $temp_module_path = __DIR__ . "/temp_module.txt";
         $temp_command_path = __DIR__ . "/temp_command.txt";
-
         $python_script_path = __DIR__ . "/script.py";
-    
+        
         file_put_contents($temp_module_path, $maude_module);
         file_put_contents($temp_command_path, $maude_command);
+        
+        $result = "a";
+        #$result = shell_exec("/opt/venv/bin/python3 " . escapeshellarg($python_script_path) . " " . escapeshellarg($maude_module) . " " . escapeshellarg($maude_command) . " 2>&1");
 
-        $result = shell_exec("C:/Python311/python.exe " . $python_script_path . " \"$maude_module\" \"$maude_command\"");
+        #$result = shell_exec("python3 " . $python_script_path . " \"$maude_module\" \"$maude_command\"");
+        #$result = shell_exec('python3 includes/script.py' . " \"$maude_module\" \"$maude_command\"");
 
-        $resultArray = explode("<!-- SPLIT -->", $result);
-    
+        if($result == "a"){
+            $resultArray = "m" . "<!-- SPLIT -->" . "c" . "<!-- SPLIT -->" . "p" . "<!-- SPLIT -->" . "s" . "<!-- SPLIT -->" . "ugh";
+        }
+        else{
+            $resultArray = explode("<!-- SPLIT -->", "R: " . $result . "<!-- SPLIT -->" . "Empty command" . "<!-- SPLIT -->" . "No params" . "<!-- SPLIT -->" . "Nopes" . "<!-- SPLIT -->" . "Nopes");
+            //$resultArray = explode("<!-- SPLIT -->", $result);
+        }
+        
         unlink($temp_module_path);
         unlink($temp_command_path);
-    
+        
         return $resultArray;
     }
 

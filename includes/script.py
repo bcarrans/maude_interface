@@ -1,4 +1,4 @@
-#!/C:/Python311/python.exe
+#!/usr/bin/env python3
 
 import sys
 import maude
@@ -126,7 +126,7 @@ def getCondition(params):
 try: 
     ### Initialize all possible input parameters (the ones used in matching and strategies are missing creo)
     m = command = params = term = moduleName = bound = number = condition = pattern = subject = searchtypeAux = None
-    maxIter = 1
+    maxIter = 20
     i = 0
     result = ""
 
@@ -272,7 +272,8 @@ try:
 
     else:
     #print(maude_module + "<!-- SPLIT -->" + command + "<!-- SPLIT -->" + params + "<!-- SPLIT -->" + str(t.getSort()) + "<!-- SPLIT -->" + str(t))
-        print((inputModule if inputModule else "Empty module") + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "No params") + "<!-- SPLIT -->" + (str(t.getSort()) if t else "Nopes") + "<!-- SPLIT -->" + (result if result else (str(t) if t else "Nopes")))
+        print("Empty module" + "<!-- SPLIT -->" + "Empty command" + "<!-- SPLIT -->" + "No params" + "<!-- SPLIT -->" + "Nopes" + "<!-- SPLIT -->" + "Nopes")
+        #print((inputModule if inputModule else "Empty module") + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "No params") + "<!-- SPLIT -->" + (str(t.getSort()) if t else "Nopes") + "<!-- SPLIT -->" + (result if result else (str(t) if t else "Nopes")))
             # + "<!-- SPLIT -->" + (start_time if start_time else "0s"))
 
     #print((inputModule if inputModule else "Empty module") + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "No params") + "<!-- SPLIT -->" + (str(t.getSort()) if t else "Nopes") + "<!-- SPLIT -->" + (str(t) if t else "Nopes"))

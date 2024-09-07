@@ -8,6 +8,7 @@ define('BD_NAME', 'maudeInterface');
 define('BD_USER', 'maudeInterface');
 define('BD_PASS', 'maudeInterface');
 
+
 /**
  * Configuración del soporte de UTF-8, localización (idioma y país) y zona horaria
  */
