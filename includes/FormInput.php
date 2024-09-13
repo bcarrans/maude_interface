@@ -2,6 +2,7 @@
 namespace es\ucm\fdi\aw;
 
 class FormInput extends Form {
+    
     public function __construct() {
         parent::__construct('formInput');
     }
@@ -85,44 +86,50 @@ class FormInput extends Form {
 
     protected function procesaFormulario($datos) {
         
-        $this->errores = [];
+        #$this->errores = [];
+        $result = array();
+
         $module = $_POST['maude_module'] ?? null;
         $command = $_POST['maude_command'] ?? null;
         $user = $_SESSION['user_id'] ?? null;
-/*
-        if (empty($module)) { 
-            if(empty($_SESSION['module'])) {
-                $this->errores['module'] = "No module has been defined yet";
-            }
 
-            else {
-                $module = $_SESSION['module'] ?? null;
-            }
+        if ( empty($module) ) {
+            $result['module'] = "Enter a module";
         }
-
-        else{
-            $_SESSION['module'] = $module;
+        
+        if ( empty($command) ) {
+            $result['command'] = "Enter a command";
         }
-*/
-        if (empty($command)) {
-            $this->errores['command'] = "Enter a command";
-        }
-
-        if (count($this->errores) === 0) {
+        
+        if (count($result) === 0) {
             $resultArray = Input::execute();
 
-            $resultArray = array_pad($resultArray, 5, '');
-// = $user ?? 1
-            $input = Input::create($module, $command, $resultArray[4], $resultArray[3], $user = $user ?? 1);
+            $resultArray = array_pad($resultArray, 6, '');
+
+            $input = Input::create($module, $command, $resultArray[4], $resultArray[5], $resultArray[3], session_id(), $user = $user ?? NULL);
 
             $result = <<<EOF
             <h4 style='margin-top: 5px; margin-bottom: 10px;'>Input:</h4>
             Module: $resultArray[0] <br> Command: $resultArray[1] <br> Parameters: $resultArray[2]
             <h4 style='margin-top: 20px; margin-bottom: 10px;'>Result  $resultArray[3]: </h4>
-            $resultArray[4]
+            
+
             EOF;
 
+            if ($resultArray[4] == "Error") {
+                $result .= "<div class='error' style='margin-bottom: 15px;'>
+                    <strong>Error:</strong> {$resultArray[5]}<br>
+                    <p>Input details:<br><span style='display: block; margin-left: 20px;'>{$resultArray[6]}</span></p>
+                    You can find <a href='https://github.com/bcarrans/maude_interface/blob/main/README.md' target='_blank'>here</a> a list of the currently supported commands or consult the <a href='https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf' target='_blank'>Maude Manual</a> for more information about their usage.
+                </div>";
+            }
+            else {
+                $result .= $resultArray[4];
+            }
+
             return $result;
+
+
         }
         return $this->errores;
     }

@@ -6,19 +6,31 @@ $form = new es\ucm\fdi\aw\FormInput();
 $htmlFormLogin = $form->gestiona2();
 
 $userId = $_SESSION['user_id'] ?? null;
-$inputUserEntriesHtml = '<div>';
-$inputSessionEntriesHtml = '<div>';
+#$userId = $_SESSION['session_id'] ?? null;
+$sessionId = session_id();
+
+$inputList = '<div>';
+$errorList = '<div>';
 
 if ($userId !== null) {
     $inputs = es\ucm\fdi\aw\Input::getUserInputs($userId);
+    $errors = es\ucm\fdi\aw\Input::getUserErrors($userId);
+}
+
+else {
+    $inputs = es\ucm\fdi\aw\Input::getSessionInputs($sessionId);
+    $errors = es\ucm\fdi\aw\Input::getSessionErrors($sessionId);
+}
+
+
+if (!empty($inputs)) {
     foreach ($inputs as $input) {
-        $inputUserEntriesHtml .= sprintf(
+        $inputList .= sprintf(
             '<div class="input-cell">
                 <p><strong>Input:</strong></p>
                 <p>Module: %s</p>
                 <p>Command: %s</p>
-                <p><strong>Result %s:</strong></p>
-                <p>%s</p>
+                <p><strong>Result %s:</strong>  %s</p>
             </div>',
             htmlspecialchars($input->module()),
             htmlspecialchars($input->command()),
@@ -26,28 +38,34 @@ if ($userId !== null) {
             htmlspecialchars($input->result())
         );
     }
-    $inputUserEntriesHtml .= '</div>';
+} else{
+    $inputList .= '<p>No data</p>';
 }
 
-else {
-    $inputs = es\ucm\fdi\aw\Input::getSessionInputs();
-    foreach ($inputs as $input) {
-        $inputSessionEntriesHtml .= sprintf(
+$inputList .= '</div>';
+
+
+if (!empty($errors)) {
+    foreach ($errors as $error) {
+        $errorList .= sprintf(
             '<div class="input-cell">
                 <p><strong>Input:</strong></p>
                 <p>Module: %s</p>
                 <p>Command: %s</p>
-                <p><strong>Result %s:</strong></p>
-                <p>%s</p>
-            </div>',           
-            htmlspecialchars($input->module()),
-            htmlspecialchars($input->command()),
-            htmlspecialchars($input->sort()),
-            htmlspecialchars($input->result())
+                <p><span style="color: rgb(150, 0, 0);"> <strong>Error:</strong> %s</span></p>
+            </div>',
+            htmlspecialchars($error->module()),
+            htmlspecialchars($error->command()),
+            htmlspecialchars($error->error())
         );
     }
-    $inputSessionEntriesHtml .= '</div>';
+} else {
+    $errorList .= '<p>No data</p>';
 }
+
+$errorList .= '</div>';
+
+
 
 $tituloPagina = 'Maude Web Interface';
 
@@ -60,6 +78,7 @@ $contenidoPrincipal = <<<EOS
         $htmlFormLogin
         <div id="resultContainer"></div>
     </div>
+
     <div class="right-column">
         <div class="tabs">
             <input type="radio" id="tab1" name="tab" checked>
@@ -68,14 +87,20 @@ $contenidoPrincipal = <<<EOS
             <label for="tab2">Review mistakes</label>
             <!-- <input type="text" id="searchField" placeholder="Search..." onkeyup="searchLogs()">  -->
         </div>
-        <div class="tab-content" id="sessionContent">
+
+        <div class="tab-content" id="inputContent">
             <div class="logs">
-                $inputSessionEntriesHtml
+                <div class="input-cell">
+                $inputList
+                </div>
             </div>
         </div>
-        <div class="tab-content" id="allContent">
+
+        <div class="tab-content" id="errorsContent">
             <div class="logs">
-                $inputUserEntriesHtml
+                <div class="input-cell">
+                    $errorList
+                </div>
             </div>
         </div>
     </div>
@@ -110,8 +135,28 @@ require __DIR__.'/includes/plantillas/plantilla.php';
 
 ?>
 <script>
-    window.onload = function() {
+    document.addEventListener("DOMContentLoaded", function() {
         var rightColumn = document.querySelector('.logs');
-        rightColumn.scrollTop = rightColumn.scrollHeight;
-    };
+        if (rightColumn) {
+            rightColumn.scrollTop = rightColumn.scrollHeight;
+        }
+
+        var inputContent = document.getElementById('inputContent');
+        var errorsContent = document.getElementById('errorsContent');
+        var tab1 = document.getElementById('tab1');
+        var tab2 = document.getElementById('tab2');
+
+        inputContent.style.display = 'block';
+        errorsContent.style.display = 'none';
+
+        tab1.addEventListener('change', function() {
+            inputContent.style.display = 'block';
+            errorsContent.style.display = 'none';
+        });
+
+        tab2.addEventListener('change', function() {
+            inputContent.style.display = 'none';
+            errorsContent.style.display = 'block';
+        });
+    });
 </script>

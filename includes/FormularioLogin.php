@@ -1,18 +1,16 @@
 <?php
 namespace es\ucm\fdi\aw;
 
-class FormularioLogin extends Form
-{
+class FormularioLogin extends Form {
+    
     public function __construct() {
         parent::__construct('formLogin');
     }
     
-    protected function generaCamposFormulario($datos, $errores = array())
-    {
+    protected function generaCamposFormulario($datos, $errores = array()) {
         $nombreUsuario =$datos['nombreUsuario'] ?? '';
 
         $htmlErroresGlobales = self::generaListaErroresGlobales($errores);
-        //$htmlErroresGlobales = isset($errores['global']) ? $errores['global'] : '';
 
         $errorNombreUsuario = self::createMensajeError($errores, 'nombreUsuario', 'span', array('class' => 'error'));
         $errorPassword = self::createMensajeError($errores, 'password', 'span', array('class' => 'error'));
@@ -34,8 +32,7 @@ class FormularioLogin extends Form
     }
     
 
-    protected function procesaFormulario($datos)
-    {
+    protected function procesaFormulario($datos) {
         $result = array();
         
         $nombreUsuario =$datos['nombreUsuario'] ?? null;

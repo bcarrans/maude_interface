@@ -47,20 +47,10 @@ class Input {
         file_put_contents($temp_module_path, $maude_module);
         file_put_contents($temp_command_path, $maude_command);
         
-        $result = "a";
-        #$result = shell_exec("/opt/venv/bin/python3 " . escapeshellarg($python_script_path) . " " . escapeshellarg($maude_module) . " " . escapeshellarg($maude_command) . " 2>&1");
+        $result = shell_exec("/venv/bin/python3 " . $python_script_path . " \"$maude_module\" \"$maude_command\"");
 
-        #$result = shell_exec("python3 " . $python_script_path . " \"$maude_module\" \"$maude_command\"");
-        #$result = shell_exec('python3 includes/script.py' . " \"$maude_module\" \"$maude_command\"");
-
-        if($result == "a"){
-            $resultArray = "m" . "<!-- SPLIT -->" . "c" . "<!-- SPLIT -->" . "p" . "<!-- SPLIT -->" . "s" . "<!-- SPLIT -->" . "ugh";
-        }
-        else{
-            $resultArray = explode("<!-- SPLIT -->", "R: " . $result . "<!-- SPLIT -->" . "Empty command" . "<!-- SPLIT -->" . "No params" . "<!-- SPLIT -->" . "Nopes" . "<!-- SPLIT -->" . "Nopes");
-            //$resultArray = explode("<!-- SPLIT -->", $result);
-        }
-        
+        $resultArray = explode("<!-- SPLIT -->", $result);
+                
         unlink($temp_module_path);
         unlink($temp_command_path);
         
@@ -75,7 +65,7 @@ class Input {
         $inputs = [];
         if ($rs) {
             while ($fila = $rs->fetch_assoc()) {
-                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['sort'], $fila['user']);
+                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['error'], $fila['sort'], $fila['session_id'], $fila['user']);
                 $input->id = $fila['id'];
                 $inputs[] = $input;
             }
@@ -87,15 +77,56 @@ class Input {
         return $inputs;
     }
 
-    public static function getSessionInputs() {
+    public static function getSessionInputs($sessionId) {
         $app = Aplicacion::getSingleton();
         $conn = $app->conexionBd();
-        $query = "SELECT * FROM Input";
+        $query = sprintf("SELECT * FROM Input WHERE session_id = '%s'", $conn->real_escape_string($sessionId));
         $rs = $conn->query($query);
         $inputs = [];
         if ($rs) {
             while ($fila = $rs->fetch_assoc()) {
-                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['sort'], $fila['user']);
+                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['error'], $fila['sort'], $fila['session_id'], $fila['user']);
+                $input->id = $fila['id'];
+                $inputs[] = $input;
+            }
+            $rs->free();
+        } else {
+            echo "Error al consultar en la BD: (" . $conn->errno . ") " . utf8_encode($conn->error);
+            exit();
+        }
+        return $inputs;
+    }
+
+    public static function getUserErrors($userId) {
+        $app = Aplicacion::getSingleton();
+        $conn = $app->conexionBd();
+        $query = sprintf("SELECT * FROM Input WHERE user = '%s' AND result = 'Error'", $conn->real_escape_string($userId));
+        $rs = $conn->query($query);
+        $inputs = [];
+        if ($rs) {
+            while ($fila = $rs->fetch_assoc()) {
+                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['error'], $fila['sort'], $fila['session_id'], $fila['user']);
+                $input->id = $fila['id'];
+                $inputs[] = $input;
+            }
+            $rs->free();
+        } else {
+            echo "Error al consultar en la BD: (" . $conn->errno . ") " . utf8_encode($conn->error);
+            exit();
+        }
+        return $inputs;
+    }
+
+
+    public static function getSessionErrors($sessionId) {
+        $app = Aplicacion::getSingleton();
+        $conn = $app->conexionBd();
+        $query = sprintf("SELECT * FROM Input WHERE session_id = '%s' AND result = 'Error'", $conn->real_escape_string($sessionId));
+        $rs = $conn->query($query);
+        $inputs = [];
+        if ($rs) {
+            while ($fila = $rs->fetch_assoc()) {
+                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['error'], $fila['sort'], $fila['session_id'], $fila['user']);
                 $input->id = $fila['id'];
                 $inputs[] = $input;
             }
@@ -116,7 +147,7 @@ class Input {
         if ($rs) {
             if ( $rs->num_rows == 1) {
                 $fila = $rs->fetch_assoc();
-                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['sort'], $fila['user']);
+                $input = new Input($fila['module'], $fila['command'], $fila['result'], $fila['error'], $fila['sort'], $fila['session_id'], $fila['user']);
                 $input->id = $fila['id'];
                 $result = $input;
             }
@@ -128,8 +159,8 @@ class Input {
         return $result;
     }
     
-    public static function create($module, $command, $result, $sort, $user) {
-        $input = new Input($module, $command, $result, $sort, $user);
+    public static function create($module, $command, $result, $error, $sort, $session_id, $user) {
+        $input = new Input($module, $command, $result, $error, $sort, $session_id, $user);
         return self::save($input);
     }
     
@@ -140,15 +171,28 @@ class Input {
         return self::insert($input);
     }
     
-    private static function insert($input) {
+    /*private static function insert($input) {
         $app = Aplicacion::getSingleton();
         $conn = $app->conexionBd();
+
+        //$userValue = is_null($input->user) ? "NULL" : $conn->real_escape_string($input->user);
+
+        if (is_null($input->user)) {
+            $userValue = "NULL";
+        } else {
+            $userValue = filter_var($input->user, FILTER_VALIDATE_INT);
+            if ($userValue === false) {
+                throw new InvalidArgumentException("User ID must be a valid integer or NULL");
+            }
+        }
+
         $query=sprintf("INSERT INTO Input(module, command, result, sort, user) VALUES('%s', '%s', '%s', '%s', '%s')"
             , $conn->real_escape_string($input->module)
             , $conn->real_escape_string($input->command)
             , $conn->real_escape_string($input->result)
             , $conn->real_escape_string($input->sort)
-            , $conn->real_escape_string($input->user));
+            ,$userValue);
+
         if ( $conn->query($query) ) {
             $input->id = $conn->insert_id;
         } else {
@@ -156,17 +200,47 @@ class Input {
             exit();
         }
         return $input;
+    }*/
+
+    private static function insert($input) {
+        $app = Aplicacion::getSingleton();
+        $conn = $app->conexionBd();
+        
+        $query = "INSERT INTO Input(module, command, result, error, sort, session_id, user) VALUES(?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        
+        if ($stmt === false) {
+            throw new Exception("Error preparing statement: " . $conn->error);
+        }
+        
+        $userValue = is_null($input->user) ? null : filter_var($input->user, FILTER_VALIDATE_INT);
+        if ($userValue === false && !is_null($input->user)) {
+            throw new InvalidArgumentException("User ID must be a valid integer or NULL");
+        }
+        
+        $stmt->bind_param("ssssssi", $input->module, $input->command, $input->result, $input->error, $input->sort, $input->session_id, $userValue);
+        
+        if ($stmt->execute()) {
+            $input->id = $conn->insert_id;
+        } else {
+            throw new Exception("Error inserting into database: " . $stmt->error);
+        }
+        
+        $stmt->close();
+        return $input;
     }
     
     private static function update($input) {
         $app = Aplicacion::getSingleton();
         $conn = $app->conexionBd();
-        $query=sprintf("UPDATE Input I SET module = '%s', command='%s', result = '%s', sort = '%s', user='%s' WHERE I.id=%i"
-            , $conn->real_escape_string($module->module)
-            , $conn->real_escape_string($command->command)
-            , $conn->real_escape_string($user->result)
+        $query=sprintf("UPDATE Input I SET module = '%s', command='%s', result = '%s', error = '%s', sort = '%s', session_id='%s', user='%s' WHERE I.id=%i"
+            , $conn->real_escape_string($input->module)
+            , $conn->real_escape_string($input->command)
+            , $conn->real_escape_string($input->result)
+            , $conn->real_escape_string($input->error)
             , $conn->real_escape_string($input->sort)
-            , $conn->real_escape_string($user->user)
+            , $conn->real_escape_string($input->session_id)
+            , $conn->real_escape_string($input->user)
             , $input->id);
         if ( $conn->query($query) ) {
             if ( $conn->affected_rows != 1) {
@@ -185,14 +259,18 @@ class Input {
     private $module;
     private $command;
     private $result;
+    private $error;
     private $sort;
+    private $session_id;
     private $user;
 
-    private function __construct($module, $command, $result, $sort, $user = null) {
+    private function __construct($module, $command, $result, $error, $sort, $session_id, $user = null) {
         $this->module = $module;
         $this->command = $command;
         $this->result = $result;
+        $this->error = $error;
         $this->sort = $sort;
+        $this->session_id = $session_id;
         $this->user = $user;
     }
 
@@ -212,11 +290,19 @@ class Input {
         return $this->result;
     }
 
+    public function error() {
+        return $this->error;
+    }
+
     public function sort() {
         return $this->sort;
     }
 
     public function user() {
         return $this->user;
+    }
+
+    public function session_id() {
+        return $this->session_id;
     }
 }

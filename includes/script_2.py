@@ -1,31 +1,28 @@
-#!/C:/Python311/python.exe
+#!/usr/bin/env python3
 
 import sys
 import maude
 import base64
 import traceback
-import threading
-import signal
+import multiprocessing
+import time
 
 
 ### DEFINITIONS
-
-class TimeoutException(Exception):
-    pass
-
-
-def timeout_handler(signum, frame):
-    raise TimeoutException("Execution timed out")
-
-
+  
 def decode_arg(encoded_arg):
     return base64.b64decode(encoded_arg).decode('utf-8')
 
 
 def getCommand(c):
     c2 = c.split()
-    #if len(c2) < 2 or not c2[-1].endswith(' .'):
-        #raise Exception("Incorrect sytanx.")
+
+    if not c.endswith(' .'):
+        raise Exception("Missing . at the end of the command input.")
+    
+    if len(c2) < 3 or not c.endswith(' .'):
+        raise Exception("Incorrect number of arguments.")
+    
     command = c2[0]
     term = ' '.join(c2[1:])[:-1]
     return command, term
@@ -94,7 +91,7 @@ def getCondition(params):
                 t2 = m.parseTerm(condAux[1].strip())
                 try:
                     #condFragment = maude.EqualityCondition(t1, t2)
-                    print("aaa")
+                    pass
                 except Exception as e:
                     print("Equality condition error: {e}")
 
@@ -104,7 +101,7 @@ def getCondition(params):
                 t2 = m.parseTerm(condAux[1].strip())               
                 try:
                     #condFragment = maude.SortTestCondition(t1, t2)
-                    print("la 2")
+                    pass
                 except Exception as e:
                     print("Sort test condition error: {e}")
 
@@ -133,10 +130,9 @@ def getCondition(params):
     else:
         return params, None
 
+
 def execute_maude_command(inputCommand):
-    global t
-    
-    ### Parse input
+### Parse input
     command, params = getCommand(inputCommand)
     bound, number, term = getSquareBrackets(params)
     moduleName, m, term = getCommandModule(term)
@@ -146,13 +142,12 @@ def execute_maude_command(inputCommand):
         bound = -1
     if number is None:
         number = -1
-    
+
 
     ### REWRITING COMMANDS
 
     if command == "reduce" or command == "red": #reduce {in module :} term .
         command = "reduce"
-        print("4")
         if m is None:
             raise Exception("No module found.")
         else:
@@ -245,106 +240,87 @@ def execute_maude_command(inputCommand):
             t2 = m.parseTerm(pattern) #espera era al reves creo
             t = m.parseTerm(subject)
             if bound == -1:
-                for sol, subs, path, nrew in t.search(searchtype, t2, condition, number):
-                    print(sol, 'with', subs, 'by', path(), '(solution, subs, path)')
+                for sol, subs, path, nrew in t.search(searchtype, t2, condition, number):                    
+                    result += sol, 'with', subs, 'by', path(), '(solution, subs, path)'
+                    i += 1
+                    if i >= maxIter:
+                        break
             else:
                 for sol, subs, path, nrew in t.search(searchtype, t2, m.parseStrategy(bound), condition, number):
-                    print(sol, 'with', subs, 'by', path(), '(solution, subs, path)')
+                    result += str(sol) + " with " + str(subs) + " by " + str(path()) +  " (solution, subs, path)"
+                    i += 1
+                    if i >= maxIter:
+                        break
 
 
     else:
         raise Exception("The provided command could not be recognized.")
+
+
     ### PRINT RESULT, EXCEPTIONS AND FEEDBACK
     if t is None:
-        print("Esto" + "<!-- SPLIT -->" + "No" + "<!-- SPLIT -->" + "funciona" + "<!-- SPLIT -->" + "parece" + "<!-- SPLIT -->" + "no")
-        #+ "<!-- SPLIT -->" + "0s")
+        raise Exception("The command could not be executed successfully")
 
     else:
-    #print(maude_module + "<!-- SPLIT -->" + command + "<!-- SPLIT -->" + params + "<!-- SPLIT -->" + str(t.getSort()) + "<!-- SPLIT -->" + str(t))
-        print((inputModule if inputModule else "Empty module") + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "No params") + "<!-- SPLIT -->" + (str(t.getSort()) if t else "Nopes") + "<!-- SPLIT -->" + (str(t) if t else "Nopes"))
-            # + "<!-- SPLIT -->" + (start_time if start_time else "0s"))
+        print((inputModule if inputModule else "None") + "<!-- SPLIT -->" + 
+              (command if command else "None") + "<!-- SPLIT -->" + 
+              (params if params else "None") + "<!-- SPLIT -->" + 
+              str(t.getSort()) + "<!-- SPLIT -->" + str(t) + "<!-- SPLIT -->" + "" + "<!-- SPLIT -->" + "")
+              # + "<!-- SPLIT -->" + (start_time if start_time else "0s"))
 
-    #print((inputModule if inputModule else "Empty module") + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "No params") + "<!-- SPLIT -->" + (str(t.getSort()) if t else "Nopes") + "<!-- SPLIT -->" + (str(t) if t else "Nopes"))
+    time.sleep(20)
+
+
 def maude_command_with_timeout(inputCommand, timeout):
-    def target():
-        try:
-            execute_maude_command(inputCommand)
-        except Exception as e:
-            print(f"Error: {e}")
+    p = multiprocessing.Process(target=execute_maude_command, args=(inputCommand,))
+    p.start()
 
-    thread = threading.Thread(target=target)
-    thread.start()
+    p.join(timeout)
 
-    # Join the thread with the specified timeout
-    thread.join(timeout)
-
-    # Check if the thread is still alive after the timeout
-    if thread.is_alive():
-        # If the thread is still alive, it means it has not finished executing
-        # Forcefully terminate the thread
-        thread.join(0)  # Join with a timeout of 0 to force the thread to exit immediately
-
-        # Check if the thread is still alive after the forced termination
-        if thread.is_alive():
-            # If the thread is still alive, it means the execution has exceeded the timeout
-            raise TimeoutException("Execution timed out")
+    if p.is_alive():
+        print("Process exceeded timeout. Terminating...")
+        p.terminate()
+        p.join()  # Ensure process termination
+    else:
+        print("Process completed within timeout.")
 
 
-try: 
-    print("1")
-    timeout = 1
-    
-    print("2")
-    ### Initialize all possible input parameters (the ones used in matching and strategies are missing creo)
-    m = command = params = term = moduleName = bound = number = condition = pattern = subject = searchtypeAux = None
-    print("3")
-    inputModule = decode_arg(sys.argv[1])
-    inputCommand = decode_arg(sys.argv[2])
-    
-    maude.init()
 
-    maude.input(inputModule)
-    t = None
-    command = None  # Initialize command variable
-    
-    try:
+if __name__ == '__main__':
+
+    try: 
+        m = command = params = term = moduleName = bound = number = condition = pattern = subject = searchtypeAux = None
+        maxIter = 20
+        i = 0
+        result = ""
+
+        inputModule = decode_arg(sys.argv[1])
+        inputCommand = decode_arg(sys.argv[2])
+        
+        maude.init()
+
+        maude.input(inputModule)
+
+        timeout = 10
         maude_command_with_timeout(inputCommand, timeout)
-    except TimeoutException as e:
-        print(e)
-    
-   
 
+        
+    except Exception as e:
 
-    
-#except Exception as e:
-    #print(f"{e}<br><br>You can find <a href='https://github.com/bcarrans/maude_interface/blob/main/README.md'>here</a> a list of the currently supported commands<br>or consult the <a href='https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf'>Maude Manual</a> for more information about their usage.")
-#    print(inputModule + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "Nopes") + "<!-- SPLIT -->" + "" + "<!-- SPLIT -->" + 
-#          f"{e}<br><br>You can find <a href='https://github.com/bcarrans/maude_interface/blob/main/README.md'>here</a> a list of the currently supported commands<br>or consult the <a href='https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf'>Maude Manual</a> for more information about their usage.")
-          #"<!-- SPLIT -->" + start_time)
-#    exit()
-except TimeoutException as e:
-    print("Esto" + "<!-- SPLIT -->" + "No" + "<!-- SPLIT -->" + "funciona" + "<!-- SPLIT -->" + "parece" + "<!-- SPLIT -->" + "no")
-    #print(maude_module + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + "Nopes" + "<!-- SPLIT -->" + "" + "<!-- SPLIT -->" + f"{e}<br><br>You can find <a href='https://github.com/bcarrans/maude_interface/blob/main/README.md'>here</a> a list of the currently supported commands<br>or consult the <a href='https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf'>Maude Manual</a> for more information about their usage.")
+        feedback = "<br>Term: " + (str(term) if term else "None") + \
+            "<br>In-line module: " + (str(moduleName) if moduleName else "None") + \
+            ("<br>Bound: " + str(bound) if bound  else "") + \
+            ("<br>Number: " + str(number) if number else "") + \
+            ("<br>Condition: " + str(condition) if condition else "") + \
+            ("<br>Pattern: " + str(pattern) if pattern else "") + \
+            ("<br>Subject-Term: " + str(subject) if subject else "") + \
+            ("<br>Searchtype: " + str(searchtypeAux) if searchtypeAux else "")
+            
+        #stack_trace = traceback.format_exc()
 
-except Exception as e:
-
-    feedback = "<br>Module: " + (str(m) if m else "None") + \
-        "<br>Command: " + (str(command) if command else "None") + \
-        "<br>Params: " + (str(params) if params else "None") + \
-        "<br>Term: " + (str(term) if term else "None") + \
-        "<br>In-line module: " + (str(moduleName) if moduleName else "None") + \
-        "<br>Bound: " + (str(bound) if bound else "None") + \
-        "<br>Number: " + (str(number) if number else "None") + \
-        "<br>Condition: " + (str(condition) if condition else "None") + \
-        "<br>Pattern: " + (str(pattern) if pattern else "None") + \
-        "<br>Subject-Term: " + (str(subject) if subject else "None") + \
-        "<br>Searchtype: " + (str(searchtypeAux) if searchtypeAux else "None")
-        #si bound y number son -1 tb son none. si son ciertos comandos no es bound si no number y no es number si no depth
-
-    stack_trace = traceback.format_exc()
-    #print(inputModule + "<!-- SPLIT -->" + (command if command else "Empty command") + "<!-- SPLIT -->" + (params if params else "Nopes") + "<!-- SPLIT -->" + "" + "<!-- SPLIT -->" + f"{e}<br><br>{stack_trace}<br><br>You can find <a href='https://github.com/bcarrans/maude_interface/blob/main/README.md'>here</a> a list of the currently supported commands<br>or consult the <a href='https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf'>Maude Manual</a> for more information about their usage.")#<br>{feedback}")
-    #print(feedback)
-    html_feedback = f"<br>__________________<br>Feedback:{feedback}<br>{e}<br><br>{stack_trace}<br><br>You can find <a href='https://github.com/bcarrans/maude_interface/blob/main/README.md'>here</a> a list of the currently supported commands<br>or consult the <a href='https://maude.cs.illinois.edu/w/images/e/e9/Maude34manual.pdf'>Maude Manual</a> for more information about their usage."
-
-    print(html_feedback)
-    exit()
+        print((inputModule if inputModule else "None") + "<!-- SPLIT -->" + 
+                (command if command else "None") + "<!-- SPLIT -->" + 
+                (params if params else "None") + "<!-- SPLIT -->" + 
+                "" + "<!-- SPLIT -->" + "Error" + "<!-- SPLIT -->" +
+                str(e) + "<!-- SPLIT -->" + feedback)
+        exit()

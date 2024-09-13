@@ -1,14 +1,13 @@
 <?php
 namespace es\ucm\fdi\aw;
 
-class FormularioRegistro extends Form
-{
+class FormularioRegistro extends Form {
+
     public function __construct() {
         parent::__construct('formRegistro');
     }
     
-    protected function generaCamposFormulario($datos, $errores = array())
-    {
+    protected function generaCamposFormulario($datos, $errores = array()) {
         $nombreUsuario = $datos['nombreUsuario'] ?? '';
         $nombre = $datos['nombre'] ?? '';
 
@@ -36,8 +35,7 @@ class FormularioRegistro extends Form
     }
     
 
-    protected function procesaFormulario($datos)
-    {
+    protected function procesaFormulario($datos) {
         $result = array();
         
         $nombreUsuario = $datos['nombreUsuario'] ?? null;

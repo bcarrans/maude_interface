@@ -7,6 +7,15 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-venv \
     libzip-dev \
+
+    libssl-dev \
+    libxml2-dev \
+    libsqlite3-dev \
+    libpq-dev \
+    #libmysqlclient-dev \
+    libmariadb-dev-compat \
+    libmariadb-dev \
+
     && docker-php-ext-install mysqli pdo pdo_mysql zip \
     && docker-php-ext-enable mysqli \
     && apt-get clean \
@@ -15,7 +24,7 @@ RUN apt-get update && apt-get install -y \
 # entorno virtual
 RUN python3 -m venv /venv \
     && /venv/bin/pip install --upgrade pip \
-    && /venv/bin/pip install maude
+    && /venv/bin/pip install maude numpy scipy sympy
 
 RUN a2enmod rewrite
 COPY . /var/www/html/

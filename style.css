@@ -504,8 +504,8 @@ li {
 }
 
 .tabs {
-	margin:0;
-	height: 40px;
+    margin: 0;
+    height: 40px;
     display: flex;
     width: 100%;
 }
@@ -515,8 +515,8 @@ li {
 }
 
 .tabs label {
-	border-top-left-radius: 5px;
-	border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
     padding: 10px;
     background: #f1f1f186;
     border: 1px solid #ddd;
@@ -529,27 +529,19 @@ li {
     padding: 10px;
     border-top: 1px solid #ddd;
     background: #f9f9f9;
-	transition: background-color 0.3s;
+    transition: background-color 0.3s;
 }
 
 .tabs input[type="radio"]:checked + label {
-	background: #f0f0f0;
+    background: #f0f0f0;
     border-bottom: 1px solid #f0f0f0;
     font-weight: bold;
-    border-top: 1px solid #ddd;
     z-index: 2;
 }
 
 .tabs input[type="radio"]:checked + label + .tab-content {
     display: block;
-
-	background-color: #f0f0f0;
-}
-
-.tabs input[type="radio"]:checked + label {
-	background-color: #f0f0f0;
-    color: #000;
-    border-bottom: 1px solid #f0f0f0;
+    background-color: #f0f0f0;
 }
 
 #searchField {
